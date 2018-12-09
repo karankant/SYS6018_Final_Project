@@ -2,3 +2,7 @@
 data/airlines.csv
 data/airports.csv
 data/flights.csv
+*.csv
+.RDataTmp
+.Rhistory
+.RData
