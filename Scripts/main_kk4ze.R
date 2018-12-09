@@ -197,8 +197,10 @@ airportstats_destination<-flights%>%
 
 
 #plotting airport breakup
-bp_destination<- ggplot(airportstats_destination[1:10,], aes(x="", y=count, fill=DESTINATION_AIRPORT))+
-  geom_bar(width = 1, stat = "identity")
+bp_destination<-ggplot(airportstats_destination, aes(x=DESTINATION_AIRPORT,y=count))+labs(title="Airline Breakup-ATL")+geom_bar(stat="identity")
+  
+  
+#geom_bar(width = 1, stat = "identity")
 bp_destination
 pie <- bp_destination + coord_polar("y", start=0)
 pie
@@ -256,3 +258,64 @@ q5<-ggplot(LAX_stats, aes(x=AIRLINE,y=delay))+labs(title="Delay Breakup per Airl
 
 
 grid.arrange(p1,p2,p3,p4,p5,q1,q2,q3,q4,q5,nrow = 2)
+
+tot<-rep(1,length=7)
+#k means clustering 
+for(i in 3:10){
+clusters<-kmeans(airportstats_origin$count,i)
+tot[i]<-clusters$tot.withinss
+}
+clusters<-kmeans(airportstats_origin$count,8)
+airportstats_origin$clusters<-as.factor(clusters$cluster)
+
+flights_merge<-merge(flights, airportstats_origin, by="ORIGIN_AIRPORT")
+flights_merge[13:16]<-NULL
+flights_merge$ORIGIN_AIRPORT<-flights_merge$clusters
+
+tot<-rep(1,length=7)
+#k means clustering 
+for(i in 3:10){
+  clusters<-kmeans(airportstats_destination$count,i)
+  tot[i]<-clusters$tot.withinss
+}
+clusters<-kmeans(airportstats_destination$count,9)
+airportstats_destination$clusters<-as.factor(clusters$cluster)
+
+
+flights_merge<-merge(flights_merge, airportstats_destination, by="DESTINATION_AIRPORT")
+flights_merge$DESTINATION_AIRPORT<-flights_merge$clusters.y
+flights_merge[13:18]<-NULL
+
+write.csv(flights_merge, file = "data/flights_clean_merged.csv")
+
+
+#==============Running a model===================#
+no<-c('MONTH','DAY','DAY_OF_WEEK','AIRLINE','ORIGIN_AIRPORT','DESTINATION_AIRPORT','SCHEDULED_DEPARTURE','SCHEDULED_TIME','DISTANCE','ARRIVAL_DELAY')
+flights_m<-flights[flights$MONTH==1,]
+flights_m<-flights_m[flights_m$DAY==20,]
+flights_m<-flights_m[,no]
+flights_m$ARRIVAL_DELAY[flights_m$ARRIVAL_DELAY < 15] = 0
+flights_m$ARRIVAL_DELAY[flights_m$ARRIVAL_DELAY >= 15] = 1
+flights_m$ARRIVAL_DELAY<-as.factor(flights_m$ARRIVAL_DELAY)
+library(caret)
+library (randomForest)
+Train <- createDataPartition(flights_m$ARRIVAL_DELAY, p=0.7, list=FALSE)
+train <- flights_m[ Train, ]
+
+Train <- createDataPartition(train$ARRIVAL_DELAY, p=0.5, list=FALSE)
+train<-train[Train,]
+test <- flights_m[ -Train, ]
+
+
+
+bag.lm =randomForest(ARRIVAL_DELAY~.,data=train,na.rm=TRUE)
+bag.boston
+
+
+importance (rf.boston )
+varImpPlot (rf.boston )
+
+yhat.bag = predict (bag.boston ,newdata =Boston [-train ,])
+plot(yhat.bag , boston.test)
+abline (0,1)
+mean(( yhat.bag -boston.test)^2)
