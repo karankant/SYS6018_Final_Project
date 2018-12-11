@@ -126,12 +126,12 @@ flights$SCHEDULED_DEPARTURE <- as.factor(flights$SCHEDULED_DEPARTURE)
 ###Tasks for data exploration###
 #1. Summary statistics for flights dataframe: size, #rows, #cols, each column's type, 
 #   unique values, #NA's and percentage NA's.
-#2. Number of flights by airport to determine busier airports (Karan)
-#3. Number of flights by month to see heavier traffic during certain travel seasons or holidays (Rakesh)
-#4. Summary statistics by airline— to assess punctuality of each airline 
+#2. Summary statistics for response variable
+#3. Number of flights by airport to determine busier airports (Karan)
+#4. Number of flights by month to see heavier traffic during certain travel seasons or holidays (Rakesh)
+#5. Summary statistics by airline— to assess punctuality of each airline 
 #percent of flights by company and average delay across flights for each company. Economies of 
 #scale effect here? (Karan)
-#5. Summary statistics for response variable
 
 
 #1.
@@ -156,13 +156,13 @@ df.info <- function(x) {
        column.details = column.info)
 }
 
-#View flights information --> Karant insert output here
+#View flights information --> Karan insert output here
 df.info(flights)
 
 
 
 
-#5.
+#2.
 #Response variable summary statistics
 summary(flights$ARRIVAL_DELAY)
 
@@ -174,8 +174,6 @@ for (i in 1:9) {
   hist(flights[,i], xlab = colnames(flights)[i], main=colnames(flights)[i])
 }
 
-df.info(airports)
-df.info(airlines)
 
 unique(flights$AIRLINE)
 #unique airlines:  [1] "AS" "AA" "US" "DL" "NK" "UA" "HA" "B6" "OO" "EV" "F9" "WN" "MQ" "VX"
@@ -270,6 +268,18 @@ grid.arrange(p1,p2,p3,p4,p5,q1,q2,q3,q4,q5,nrow = 2)
 #                      Model Preprocessing Using Airport Clusters           #
 #                                                                           #
 #############################################################################
+
+###Tasks for Model preprocessing using airport clusters###
+#1. ORIGIN_AIRPORT and DESTINATION_AIRPORT features each have more than 200 levels. These features
+#must be included in the model, so we need an intelligent way to reduce the number of levels since we
+#cannot run our classifcation algorithms on a dataframe with 6million rows and 500+ columns.
+#The hypothesis is that the information contained in these two features is a metric for both their size
+# and traffic flow, assuming that larger airports such as JFK or LAX have more flights passing through them
+# and are bigger, thus potentially having some economies of scale at play. In order to reduce the number of levels
+# we cluster airports using the number of flight records in the dataset for each airport, and assign 
+# ORIGIN-AIRPORT and DESTINATION_AIRPORT a new value for these features which is a factor containing their assigned cluster.
+# This means that larger airports should be grouped together as well as medium and smaller airports, and this should retain 
+# most of the previous information. The code for this process is provided below:
 
 #Convert response variable to binary for classification and clustering
 #converting arrival_delay into a classification response variable
