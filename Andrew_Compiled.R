@@ -127,11 +127,11 @@ flights$SCHEDULED_DEPARTURE <- as.factor(flights$SCHEDULED_DEPARTURE)
 #1. Summary statistics for flights dataframe: size, #rows, #cols, each column's type, 
 #   unique values, #NA's and percentage NA's.
 #2. Summary statistics for response variable
-#3. Number of flights by airport to determine busier airports (Karan)
+#3. Number of flights by airport to determine busier airports and airline statistics for Top 5 Airports
 #4. Number of flights by month to see heavier traffic during certain travel seasons or holidays (Rakesh)
 #5. Summary statistics by airline— to assess punctuality of each airline 
 #percent of flights by company and average delay across flights for each company. Economies of 
-#scale effect here? (Karan)
+#scale effect here? 
 
 
 #1.
@@ -156,10 +156,22 @@ df.info <- function(x) {
        column.details = column.info)
 }
 
-#View flights information --> Karan insert output here
+#View flights information 
 df.info(flights)
-
-
+# 
+# column   class unique.values missing.count missing.pct
+# 1                MONTH  factor            12             0           0
+# 2                  DAY  factor            31             0           0
+# 3          DAY_OF_WEEK  factor             7             0           0
+# 4              AIRLINE  factor            14             0           0
+# 5        FLIGHT_NUMBER  factor          6946             0           0
+# 6          TAIL_NUMBER  factor          4896             0           0
+# 7       ORIGIN_AIRPORT  factor           324             0           0
+# 8  DESTINATION_AIRPORT  factor           324             0           0
+# 9  SCHEDULED_DEPARTURE  factor            48             0           0
+# 10      SCHEDULED_TIME numeric           549             0           0
+# 11            DISTANCE numeric          1350             0           0
+# 12       ARRIVAL_DELAY integer          1216             0           0
 
 
 #2.
@@ -178,6 +190,7 @@ for (i in 1:9) {
 unique(flights$AIRLINE)
 #unique airlines:  [1] "AS" "AA" "US" "DL" "NK" "UA" "HA" "B6" "OO" "EV" "F9" "WN" "MQ" "VX"
 
+#Boxplots for distance and arrival delay
 boxplot(flights[ ,11],main="Distance Boxplot")
 
 boxplot(flights[ ,12],main="Arrival Delay Boxplot")
@@ -188,6 +201,15 @@ hist(log(flights$ARRIVAL_DELAY))
 hist(flights$SCHEDULED_TIME)
 hist(flights$SCHEDULED_DEPARTURE)
 
+
+#3.
+
+#Arrival Delay Distribution- GGPLOT
+delay<-flights%>%
+  group_by(Delay=ARRIVAL_DELAY)%>%
+  summarise(count=n())
+p1<-ggplot(delay, aes(x=Delay,y=count))+labs(title="Arrival Delay Distribution")+geom_bar(stat="identity")+xlim(-60,200)
+p1
 
 #checking airline codes
 airlines
@@ -205,7 +227,9 @@ airportstats_destination<-flights%>%
             max_ARRIVAL_DELAY<- max(ARRIVAL_DELAY)
   ) %>% arrange(desc(count))
 airportstats_destination<-airportstats_destination[1:5,]
-#plotting airport breakup
+
+
+#plotting Top 10 airport flights breakup
 bp_destination<-ggplot(airportstats_destination, aes(x=DESTINATION_AIRPORT,y=count))+labs(title="Airline Breakup-total")+geom_bar(stat="identity")
 bp_destination
 
@@ -217,7 +241,7 @@ airportstats_origin<-flights%>%
             max_ARRIVAL_DELAY<- max(ARRIVAL_DELAY)
   ) %>% arrange(desc(count))
 
-#stats and plots for top 5 busiest airports
+#stats and plots for top 5 busiest airports and corresponding airlines/delays
 ATL_stats<-flights[flights$ORIGIN_AIRPORT=='ATL',]%>%
   group_by(AIRLINE)%>%
   summarise(count=n(),
