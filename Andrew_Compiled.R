@@ -5,11 +5,15 @@ setwd("~/Desktop/Fall 2018/SYS 6018/Final Project")
 library(tidyverse)
 library(readr)
 library(caret)
+library(lubridate)
+library(chron)
+library(gridExtra)
+library(ggplot2)
 
 #Load data sets
-flights  <- read_csv ("flights.csv")
-airports <- read_csv ("airports.csv")
-airlines <- read_csv ("airlines.csv")
+flights  <- read_csv ("data/flights.csv")
+airports <- read_csv ("data/airports.csv")
+airlines <- read_csv ("data/airlines.csv")
 
 #############################################################################
 #                                                                           #
@@ -31,10 +35,10 @@ airlines <- read_csv ("airlines.csv")
 #Looks like the origin and destination airports use two different codes
 #https://www.kaggle.com/smiller933/fixing-airport-codes/notebook
 
-dfAirportID <- read.csv ("L_AIRPORT_ID.csv",
+dfAirportID <- read.csv ("data/L_AIRPORT_ID.csv",
                          colClasses=c("character", "character"), col.names=c("AirportID", "Description"))
 
-dfAirport <- read.csv ("L_AIRPORT.csv",
+dfAirport <- read.csv ("data/L_AIRPORT.csv",
                        colClasses=c("character", "character"), col.names=c("IATA_CODE", "Description"))
 
 airportlist<-merge(dfAirportID,dfAirport)
@@ -170,8 +174,96 @@ for (i in 1:9) {
   hist(flights[,i], xlab = colnames(flights)[i], main=colnames(flights)[i])
 }
 
+df.info(airports)
+df.info(airlines)
+
+unique(flights$AIRLINE)
+#unique airlines:  [1] "AS" "AA" "US" "DL" "NK" "UA" "HA" "B6" "OO" "EV" "F9" "WN" "MQ" "VX"
+
+boxplot(flights[ ,11],main="Distance Boxplot")
+
+boxplot(flights[ ,12],main="Arrival Delay Boxplot")
+
+#a few useful histograms
+
+hist(log(flights$ARRIVAL_DELAY))
+hist(flights$SCHEDULED_TIME)
+hist(flights$SCHEDULED_DEPARTURE)
 
 
+#checking airline codes
+airlines
+unique(flights$AIRLINE)
+sort(airlines$IATA_CODE) == sort(unique(flights$AIRLINE))
+
+
+#Total flights by destination airport 
+
+airportstats_destination<-flights%>%
+  group_by(DESTINATION_AIRPORT)%>%
+  summarise(count=n(),
+            mean_ARRIVAL_DELAY<-mean(ARRIVAL_DELAY),
+            min_ARRIVAL_DELAY<- min(ARRIVAL_DELAY),
+            max_ARRIVAL_DELAY<- max(ARRIVAL_DELAY)
+  ) %>% arrange(desc(count))
+airportstats_destination<-airportstats_destination[1:5,]
+#plotting airport breakup
+bp_destination<-ggplot(airportstats_destination, aes(x=DESTINATION_AIRPORT,y=count))+labs(title="Airline Breakup-total")+geom_bar(stat="identity")
+bp_destination
+
+airportstats_origin<-flights%>%
+  group_by(ORIGIN_AIRPORT)%>%
+  summarise(count=n(),
+            mean_ARRIVAL_DELAY<-mean(ARRIVAL_DELAY),
+            min_ARRIVAL_DELAY<- min(ARRIVAL_DELAY),
+            max_ARRIVAL_DELAY<- max(ARRIVAL_DELAY)
+  ) %>% arrange(desc(count))
+
+#stats and plots for top 5 busiest airports
+ATL_stats<-flights[flights$ORIGIN_AIRPORT=='ATL',]%>%
+  group_by(AIRLINE)%>%
+  summarise(count=n(),
+            delay=mean_ARRIVAL_DELAY<-mean(ARRIVAL_DELAY)
+  )
+p1<-ggplot(ATL_stats, aes(x=AIRLINE,y=count))+labs(title="Airline Breakup-ATL")+geom_bar(stat="identity")
+q1<-ggplot(ATL_stats, aes(x=AIRLINE,y=delay))+labs(title="Delay Breakup per Airline-ATL")+geom_bar(stat="identity")
+
+ORD_stats<-flights[flights$ORIGIN_AIRPORT=='ORD',]%>%
+  group_by(AIRLINE)%>%
+  summarise(count=n(),
+            delay=mean_ARRIVAL_DELAY<-mean(ARRIVAL_DELAY)
+  )
+p2<-ggplot(ORD_stats, aes(x=AIRLINE,y=count))+labs(title="Airline Breakup-ORD")+geom_bar(stat="identity")
+q2<-ggplot(ORD_stats, aes(x=AIRLINE,y=delay))+labs(title="Delay Breakup per Airline-ORD")+geom_bar(stat="identity")
+
+DFW_stats<-flights[flights$ORIGIN_AIRPORT=='DFW',]%>%
+  group_by(AIRLINE)%>%
+  summarise(count=n(),
+            delay=mean_ARRIVAL_DELAY<-mean(ARRIVAL_DELAY)
+  )
+p3<-ggplot(DFW_stats, aes(x=AIRLINE,y=count))+labs(title="Airline Breakup-DFW")+geom_bar(stat="identity")
+q3<-ggplot(DFW_stats, aes(x=AIRLINE,y=delay))+labs(title="Delay Breakup per Airline-DFW")+geom_bar(stat="identity")
+
+DEN_stats<-flights[flights$ORIGIN_AIRPORT=='DEN',]%>%
+  group_by(AIRLINE)%>%
+  summarise(count=n(),
+            delay=mean_ARRIVAL_DELAY<-mean(ARRIVAL_DELAY)
+  )
+p4<-ggplot(DEN_stats, aes(x=AIRLINE,y=count))+labs(title="Airline Breakup-DEN")+geom_bar(stat="identity")
+q4<-ggplot(DEN_stats, aes(x=AIRLINE,y=delay))+labs(title="Delay Breakup per Airline-DEN")+geom_bar(stat="identity")
+
+
+LAX_stats<-flights[flights$ORIGIN_AIRPORT=='LAX',]%>%
+  group_by(AIRLINE)%>%
+  summarise(count=n(),
+            delay=mean_ARRIVAL_DELAY<-mean(ARRIVAL_DELAY)
+  )
+
+p5<-ggplot(LAX_stats, aes(x=AIRLINE,y=count))+labs(title="Airline Breakup-LAX")+geom_bar(stat="identity")
+q5<-ggplot(LAX_stats, aes(x=AIRLINE,y=delay))+labs(title="Delay Breakup per Airline-LAX")+geom_bar(stat="identity")
+
+
+grid.arrange(p1,p2,p3,p4,p5,q1,q2,q3,q4,q5,nrow = 2)
 
 #############################################################################
 #                                                                           #
