@@ -277,7 +277,32 @@ flights$ARRIVAL_DELAY[(flights$ARRIVAL_DELAY < 15)] = 0
 flights$ARRIVAL_DELAY[flights$ARRIVAL_DELAY >= 15] = 1
 
 
+tot<-rep(1,length=7)
+#k means clustering using within cluster variation evaluation
+for(i in 3:10){
+  clusters<-kmeans(airportstats_origin$count,i)
+  tot[i]<-clusters$tot.withinss
+}
+clusters<-kmeans(airportstats_origin$count,8)
+airportstats_origin$clusters<-as.factor(clusters$cluster)
 
+flights_merge<-merge(flights, airportstats_origin, by="ORIGIN_AIRPORT")
+flights_merge[13:16]<-NULL
+flights_merge$ORIGIN_AIRPORT<-flights_merge$clusters
+
+tot<-rep(1,length=7)
+#k means clustering using within cluster variation
+for(i in 3:10){
+  clusters<-kmeans(airportstats_destination$count,i)
+  tot[i]<-clusters$tot.withinss
+}
+clusters<-kmeans(airportstats_destination$count,9)
+airportstats_destination$clusters<-as.factor(clusters$cluster)
+
+
+flights_merge<-merge(flights_merge, airportstats_destination, by="DESTINATION_AIRPORT")
+flights_merge$DESTINATION_AIRPORT<-flights_merge$clusters.y
+flights_merge[13:18]<-NULL
 
 
 #############################################################################
